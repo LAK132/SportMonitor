@@ -7,8 +7,8 @@ bool SerialInputComplete = false;
 
 // WiFi
 
-const char AP_SSID[] = "FlinBit";
-const char AP_Password[] = "12345678";
+char AP_SSID[80] = {"FlinBit"};
+char AP_Password[80] = {"12345678"};
 int AP_Channel = random(0, 13) + 1;
 
 const IPAddress AP_IP(192,168,1,1);
@@ -55,6 +55,44 @@ void setup()
     //
     SPIFFS.begin();
 
+    // 
+    // Get WiFi MAC Address and set SSID
+    //
+    byte mac[6];
+    WiFi.macAddress(mac);
+    sprintf(AP_SSID, "FlinBit_%02X%02X%02X", mac[3], mac[4], mac[5]); 
+
+    //
+    // If available, obtain password from SPIFFS (/password.txt)
+    //   
+    String filename = "/password.txt";
+    if (SPIFFS.exists(filename)) {
+        #ifdef DEBUG
+        Serial.println(filename + " exists. Reading password.\r\n");
+        #endif
+        File hPassword = SPIFFS.open(filename, "r");
+        if (hPassword) {
+            while (hPassword.available()){
+              int l = hPassword.readBytesUntil('\n', AP_Password, sizeof(AP_Password));
+              AP_Password[l] = 0;
+            }
+            hPassword.close();
+        } else {
+            #ifdef DEBUG
+            Serial.print("Error reading " + filename + " file\r\n");      
+            #endif
+        }
+    } else {
+        #ifdef DEBUG
+        Serial.println(filename + " doesn't exist. Please use deafult password.\r\n");
+        #endif
+    }
+
+    #ifdef DEBUG
+    Serial.print("Password: ");
+    Serial.print(AP_Password);
+    #endif
+    
     //
     // Set up WiFi
     //

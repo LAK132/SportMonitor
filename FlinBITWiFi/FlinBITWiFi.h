@@ -12,8 +12,8 @@ bool SerialEvent();
 
 #include <ESP8266WiFi.h>
 
-extern const char AP_SSID[];
-extern const char AP_Password[];
+extern char AP_SSID[];
+extern char AP_Password[];
 extern int AP_Channel;
 
 extern const IPAddress AP_IP;
