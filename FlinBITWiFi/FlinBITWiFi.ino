@@ -7,13 +7,14 @@ bool SerialInputComplete = false;
 
 // WiFi
 
-char AP_SSID[80] = {"FlinBit"};
+char AP_SSID[80];
 char AP_Password[80] = {"12345678"};
+char AP_IP_Text[80];
 int AP_Channel = random(0, 13) + 1;
 
-const IPAddress AP_IP(192,168,1,1);
-const IPAddress AP_Gateway = AP_IP;
-const IPAddress AP_Subnet(255,255,255,0);
+IPAddress AP_IP(192,168,1,1);
+IPAddress AP_Gateway = AP_IP;
+IPAddress AP_Subnet(255,255,255,0);
 
 // DNS
 
@@ -35,7 +36,7 @@ WebSocketsServer Socket(SocketPort);
 File LogFile;
 const String LogDir = "/logs/";
 
-// #define DEBUG
+#define DEBUG
 
 void setup()
 {
@@ -58,39 +59,29 @@ void setup()
     // 
     // Get WiFi MAC Address and set SSID
     //
+
+    Serial.println("WiFi MAC Address:");
+    Serial.println(WiFi.macAddress());
+    
     byte mac[6];
     WiFi.macAddress(mac);
     sprintf(AP_SSID, "FlinBit_%02X%02X%02X", mac[3], mac[4], mac[5]); 
 
-    //
-    // If available, obtain password from SPIFFS (/password.txt)
-    //   
-    String filename = "/password.txt";
-    if (SPIFFS.exists(filename)) {
-        #ifdef DEBUG
-        Serial.println(filename + " exists. Reading password.\r\n");
-        #endif
-        File hPassword = SPIFFS.open(filename, "r");
-        if (hPassword) {
-            while (hPassword.available()){
-              int l = hPassword.readBytesUntil('\n', AP_Password, sizeof(AP_Password));
-              AP_Password[l] = 0;
-            }
-            hPassword.close();
-        } else {
-            #ifdef DEBUG
-            Serial.print("Error reading " + filename + " file\r\n");      
-            #endif
-        }
-    } else {
-        #ifdef DEBUG
-        Serial.println(filename + " doesn't exist. Please use deafult password.\r\n");
-        #endif
-    }
-
+    ReadParameterFromSPIFFS("/SSID.txt", AP_SSID, sizeof(AP_SSID));
+    ReadParameterFromSPIFFS("/password.txt", AP_Password, sizeof(AP_Password));
+    ReadParameterFromSPIFFS("/ipaddr.txt", AP_IP_Text, sizeof(AP_IP_Text));
+    AP_IP.fromString(AP_IP_Text);
+ 
     #ifdef DEBUG
+    Serial.print("SSID: ");
+    Serial.print(AP_SSID);
+    Serial.print("\r\n");
     Serial.print("Password: ");
     Serial.print(AP_Password);
+    Serial.print("\r\n");
+    Serial.print("IP: ");
+    Serial.print(AP_IP_Text);
+    Serial.print("\r\n");
     #endif
     
     //
@@ -239,6 +230,36 @@ void loop()
     }
     delay(1);
 }
+
+void ReadParameterFromSPIFFS(String filename, char buffer[], uint16_t maxbytes)
+{
+    //
+    // If available, obtain password from SPIFFS (/password.txt)
+    //   
+    //String filename = "/password.txt";
+    if (SPIFFS.exists(filename)) {
+        #ifdef DEBUG
+        Serial.println(filename + " exists. Reading.\r\n");
+        #endif
+        File hPassword = SPIFFS.open(filename, "r");
+        if (hPassword) {
+            while (hPassword.available()){
+              int l = hPassword.readBytesUntil('\n', buffer, maxbytes);
+              buffer[l] = 0;
+            }
+            hPassword.close();
+        } else {
+            #ifdef DEBUG
+            Serial.print("Error reading " + filename + " file\r\n");      
+            #endif
+        }
+    } else {
+        #ifdef DEBUG
+        Serial.println(filename + " doesn't exist. Please use deafult password.\r\n");
+        #endif
+    }
+}
+
 
 void ServerStartLogging(String fname, bool overwrite)
 {

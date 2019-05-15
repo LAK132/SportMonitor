@@ -16,9 +16,9 @@ extern char AP_SSID[];
 extern char AP_Password[];
 extern int AP_Channel;
 
-extern const IPAddress AP_IP;
-extern const IPAddress AP_Gateway;
-extern const IPAddress AP_Subnet;
+extern IPAddress AP_IP;
+extern IPAddress AP_Gateway;
+extern IPAddress AP_Subnet;
 
 //
 // DNS
