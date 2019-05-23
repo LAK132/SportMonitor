@@ -36,7 +36,7 @@ WebSocketsServer Socket(SocketPort);
 File LogFile;
 const String LogDir = "/logs/";
 
-#define DEBUG
+//#define DEBUG
 
 void setup()
 {
@@ -69,8 +69,8 @@ void setup()
 
     ReadParameterFromSPIFFS("/SSID.txt", AP_SSID, sizeof(AP_SSID));
     ReadParameterFromSPIFFS("/password.txt", AP_Password, sizeof(AP_Password));
-    ReadParameterFromSPIFFS("/ipaddr.txt", AP_IP_Text, sizeof(AP_IP_Text));
-    AP_IP.fromString(AP_IP_Text);
+    //ReadParameterFromSPIFFS("/ipaddr.txt", AP_IP_Text, sizeof(AP_IP_Text));
+    //AP_IP.fromString(AP_IP_Text);
  
     #ifdef DEBUG
     Serial.print("SSID: ");
@@ -175,6 +175,12 @@ void setup()
                                 dir = SPIFFS.openDir(LogDir);
                             }
                         }
+                        else if (command == "/store")
+                        {
+                            String &&filename = commands.next();
+                            String &&text = commands.next();
+                            WriteParameterToSPIFFS(filename, text);
+                        }
                     }
 
                     if (!wasLogger)
@@ -260,6 +266,17 @@ void ReadParameterFromSPIFFS(String filename, char buffer[], uint16_t maxbytes)
     }
 }
 
+void WriteParameterToSPIFFS(String filename, String buffer)
+{
+    //
+    // Configuration file. Always overwrite.
+    //
+    File hSettingFile = SPIFFS.open(filename, "w");
+    if (hSettingFile){
+      hSettingFile.println(buffer);
+      hSettingFile.close();
+    }
+}
 
 void ServerStartLogging(String fname, bool overwrite)
 {
