@@ -1,5 +1,5 @@
 /*
- * Program to initalise the WiFi SSID (Access point name) and password.
+ * Program to initialise the WiFi SSID (Access point name) and password.
  * 
  * The SSID should be a maximum of 63 characters and contain no white space.
  * The password needs to be a minimum of 8 characters and a maximum of 80 characters.
@@ -8,7 +8,7 @@
 
 void setup() 
 {
-  // initialize serial communication at 9600 bits per second:
+  // initialise serial communication at 9600 bits per second:
   Serial.begin(9600);
   delay(100);
 
