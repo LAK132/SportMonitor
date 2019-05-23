@@ -66,10 +66,10 @@ void setup()
     byte mac[6];
     WiFi.macAddress(mac);
     sprintf(AP_SSID, "FlinBit_%02X%02X%02X", mac[3], mac[4], mac[5]); 
+    ReadParameterFromSPIFFS("/SSID.txt", AP_SSID, sizeof(AP_SSID));
     Serial.print("WiFi SSID: ");
     Serial.println(AP_SSID);
 
-    ReadParameterFromSPIFFS("/SSID.txt", AP_SSID, sizeof(AP_SSID));
     ReadParameterFromSPIFFS("/password.txt", AP_Password, sizeof(AP_Password));
     //ReadParameterFromSPIFFS("/ipaddr.txt", AP_IP_Text, sizeof(AP_IP_Text));
     //AP_IP.fromString(AP_IP_Text);
