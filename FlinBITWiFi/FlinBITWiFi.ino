@@ -242,20 +242,20 @@ void loop()
 void ReadParameterFromSPIFFS(String filename, char buffer[], uint16_t maxbytes)
 {
     //
-    // If available, obtain password from SPIFFS (/password.txt)
+    // If available, obtain parameter from SPIFFS 
     //   
     //String filename = "/password.txt";
     if (SPIFFS.exists(filename)) {
         #ifdef DEBUG
         Serial.println(filename + " exists. Reading.\r\n");
         #endif
-        File hPassword = SPIFFS.open(filename, "r");
-        if (hPassword) {
-            while (hPassword.available()){
-              int l = hPassword.readBytesUntil('\n', buffer, maxbytes);
+        File hParameterFile = SPIFFS.open(filename, "r");
+        if (hParameterFile) {
+            while (hParameterFile.available()){
+              int l = hParameterFile.readBytesUntil('\n', buffer, maxbytes);
               buffer[l] = 0;
             }
-            hPassword.close();
+            hParameterFile.close();
         } else {
             #ifdef DEBUG
             Serial.print("Error reading " + filename + " file\r\n");      
@@ -271,12 +271,12 @@ void ReadParameterFromSPIFFS(String filename, char buffer[], uint16_t maxbytes)
 void WriteParameterToSPIFFS(String filename, String buffer)
 {
     //
-    // Configuration file. Always overwrite.
+    // Write parameter to SPIFFS. Always overwrite.
     //
-    File hSettingFile = SPIFFS.open(filename, "w");
-    if (hSettingFile){
-      hSettingFile.println(buffer);
-      hSettingFile.close();
+    File hParameterFile = SPIFFS.open(filename, "w");
+    if (hParameterFile){
+      hParameterFile.println(buffer);
+      hParameterFile.close();
     }
 }
 
