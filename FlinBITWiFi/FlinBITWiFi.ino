@@ -60,12 +60,14 @@ void setup()
     // Get WiFi MAC Address and set SSID
     //
 
-    Serial.println("WiFi MAC Address:");
-    Serial.println(WiFi.macAddress());
-    
+    //Serial.println("WiFi MAC Address:");
+    //Serial.println(WiFi.macAddress());
+
     byte mac[6];
     WiFi.macAddress(mac);
     sprintf(AP_SSID, "FlinBit_%02X%02X%02X", mac[3], mac[4], mac[5]); 
+    Serial.print("WiFi SSID: ");
+    Serial.println(AP_SSID);
 
     ReadParameterFromSPIFFS("/SSID.txt", AP_SSID, sizeof(AP_SSID));
     ReadParameterFromSPIFFS("/password.txt", AP_Password, sizeof(AP_Password));
