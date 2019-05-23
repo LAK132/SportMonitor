@@ -235,6 +235,23 @@ void loop()
                 Socket.broadcastTXT("> Saved");
             #endif
         }
+
+        if (SerialInputString.length() > 1 && SerialInputString[0] == '/' && SerialInputString[1] != '/')
+        {
+            tokeniser_t commands(SerialInputString);
+            const String &command = commands.nextLower();
+            if (command == "/store")
+            {
+                String filename = commands.next();
+                String text = commands.next();
+                #ifdef DEBUG
+                Serial.print("/store ");
+                Serial.print(filename);
+                Serial.print(text);
+                #endif
+                WriteParameterToSPIFFS(filename, text);
+            }
+        }
     }
     delay(1);
 }
