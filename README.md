@@ -56,6 +56,8 @@ Pressing `Clear Plotter` will reset the number of data points.
 
 `/set foreground <JavaScript color>`: changes the foreground color of the web page (not saved).
 
+`/store <filename> <parameter>`: Stores/changes parameters such as SSID (filename = /SSID.txt) and password (filename = /password.txt)
+
 `/logstart append <filename>`: Same as pressing the `Start Logging` button with `Overwrite` set. Makes the FlinBIT start logging message to the specified file. If the file already exists, it will be appended to.
 
 `/logstart overwrite <filename>`: Same as pressing the `Start Logging` button with `Overwrite` set. Makes the FlinBIT start logging message to the specified file. If the file already exists, it will be deleted first.
