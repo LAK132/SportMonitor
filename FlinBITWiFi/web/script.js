@@ -147,47 +147,7 @@ var MessageParser = function(message)
         // command
         var tokens = new Tokeniser(message);
         var command = tokens.nextLower();
-        if (command == 'monitor')
-        {
-            var command = tokens.nextLower();
-            if (command == "show")
-            {
-                document.getElementById('serialMonitor').style.display = 'flex';
-                PlotterResize();
-            }
-            else if (command == "hide")
-            {
-                document.getElementById('serialMonitor').style.display = 'none';
-                PlotterResize();
-            }
-            else if (command == "toggle")
-            {
-                if (document.getElementById('serialMonitor').style.display == 'none')
-                    document.getElementById('serialMonitor').style.display = 'flex';
-                else
-                    document.getElementById('serialMonitor').style.display = 'none';
-                PlotterResize();
-            }
-            else if (command == "clear")
-            {
-                document.getElementById("serialInput").value = "";
-            }
-            else if (command == "error")
-            {
-
-            }
-            else if (command == "set")
-            {
-                command = tokens.nextLower();
-                if (command == "autoscroll")
-                {
-                    command = tokens.nextLower();
-                    var autoscroll = (command === "true" || command === "on" || command === "yes");
-                    document.getElementById('serialMonitorAutoScroll').checked = autoscroll;
-                }
-            }
-        }
-        else if (command == 'plotter')
+        if (command == 'plotter')
         {
             command = tokens.nextLower();
             if (command == "show")
@@ -269,23 +229,6 @@ var MessageParser = function(message)
     else
     {
         // not a command
-        var elem = document.getElementById("serialInput");
-        elem.value += message;
-        var maxMonitorLines = document.getElementById("serialMonitorMax").value;
-        var curMonitorLines = 0;
-        for (var i = elem.value.length; i --> 0;)
-        {
-            if (elem.value[i] == '\n')
-                ++curMonitorLines;
-            if (curMonitorLines > maxMonitorLines)
-            {
-                elem.value = elem.value.substring(i + 1);
-                break;
-            }
-        }
-        if (document.getElementById('serialMonitorAutoScroll').checked)
-            elem.scrollTop = elem.scrollHeight; // "auto"-scroll to the end
-
         if (document.getElementById('serialPlotterEnabled').checked)
         {
             if (PlotterIndex < 0)
@@ -335,7 +278,22 @@ var SendMessageFromElement = function(id)
 
 var OnLoad = function()
 {
-    Plotter = new Dygraph(document.getElementById('serialPlotterContainer'), PlotterData);
+    Plotter = new Dygraph(document.getElementById('serialPlotterContainer'), PlotterData, { underlayCallback: function(canvas, area, g) {
+        const greenTop = g.toDomCoords(0, 6)[1];
+        const amberTop = g.toDomCoords(0, 17)[1];
+
+        // Draw green rect
+        canvas.fillStyle = "rgba(0, 255, 0, 0.25)";
+        canvas.fillRect(area.x, greenTop, area.w, area.h - greenTop);
+
+        // Draw amber rect
+        canvas.fillStyle = "rgba(200, 200, 0, 0.25)";
+        canvas.fillRect(area.x, amberTop, area.w, greenTop - amberTop);
+
+        // Draw red rect
+        canvas.fillStyle = "rgba(255, 0, 0, 0.25)";
+        canvas.fillRect(area.x, area.y, area.w, amberTop - area.y);
+    }});
 };
 
 window.addEventListener('load', OnLoad);
