@@ -96,7 +96,11 @@ void setup()
     //
     // Set up WebServer
     //
-    // Server.on("/", &ServerHandleRequest);
+    Server.on("/hotspot-detect.html", &ServerHandleHotspotDetectHtml);
+    Server.on("/ncsi.txt", &ServerHandleNCSITxt);
+    Server.on("/connecttest.txt", &ServerHandleConnectTestTxt);
+    Server.on("/success.txt", &ServerHandleSuccessTxt);
+
     Server.onNotFound(&ServerHandleRequest);
     Server.begin();
 
@@ -336,6 +340,46 @@ void ServerHandleRequest()
     {
         ServerSendDirectory(Server, uri);
     }
+}
+
+void ServerHandleCaptive(const char *text)
+{
+    Server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    Server.sendHeader("Pragma", "no-cache");
+    Server.sendHeader("Expires", "-1");
+    Server.send(200, "text/html", text);
+}
+
+void ServerHandleHotspotDetectHtml()
+{
+    #ifdef DEBUG
+    Serial.println("Handling hotspot-detect.html");
+    #endif
+    ServerHandleCaptive("<html><head><title>Success</title></head><body>Success</body></html>");
+}
+
+void ServerHandleNCSITxt()
+{
+    #ifdef DEBUG
+    Serial.println("Handling ncsi.txt");
+    #endif
+    ServerHandleCaptive("Microsoft NCSI");
+}
+
+void ServerHandleConnectTestTxt()
+{
+    #ifdef DEBUG
+    Serial.println("Handling connecttest.txt");
+    #endif
+    ServerHandleCaptive("Microsoft Connect Test");
+}
+
+void ServerHandleSuccessTxt()
+{
+    #ifdef DEBUG
+    Serial.println("Handling success.txt");
+    #endif
+    ServerHandleCaptive("success\n");
 }
 
 bool ServerSendFile(ESP8266WebServer &server, const String &path)

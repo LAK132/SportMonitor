@@ -39,6 +39,10 @@ extern const uint16_t ServerPort;
 extern ESP8266WebServer Server;
 
 void ServerHandleRequest();
+void ServerHandleHotspotDetectHtml();
+void ServerHandleNCSITxt();
+void ServerHandleConnectTestTxt();
+void ServerHandleSuccessTxt();
 void ServerSendFile(const String &path);
 void ServerSendDirectory(const String &path);
 void ServerStartLogging(const String &fname, const bool overwrite);
