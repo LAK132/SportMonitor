@@ -8,7 +8,7 @@ bool SerialInputComplete = false;
 // WiFi
 
 char AP_SSID[80];
-char AP_Password[80] = {"12345678"};
+char AP_Password[80] = "12345678";
 char AP_IP_Text[80];
 int AP_Channel = random(0, 13) + 1;
 
@@ -56,36 +56,30 @@ void setup()
     //
     SPIFFS.begin();
 
-    // 
+    //
     // Get WiFi MAC Address and set SSID
     //
 
-    //Serial.println("WiFi MAC Address:");
-    //Serial.println(WiFi.macAddress());
-
-    byte mac[6];
+    uint8_t mac[6];
     WiFi.macAddress(mac);
-    sprintf(AP_SSID, "FlinBit_%02X%02X%02X", mac[3], mac[4], mac[5]); 
+    snprintf(AP_SSID, sizeof(AP_SSID), "FlinBit_%02X%02X%02X", mac[3], mac[4], mac[5]);
     ReadParameterFromSPIFFS("/SSID.txt", AP_SSID, sizeof(AP_SSID));
     Serial.print("WiFi SSID: ");
     Serial.println(AP_SSID);
 
     ReadParameterFromSPIFFS("/password.txt", AP_Password, sizeof(AP_Password));
-    //ReadParameterFromSPIFFS("/ipaddr.txt", AP_IP_Text, sizeof(AP_IP_Text));
-    //AP_IP.fromString(AP_IP_Text);
- 
+
+    snprintf(AP_IP_Text, sizeof(AP_IP_Text), "%s", AP_IP.toString().c_str());
+
     #ifdef DEBUG
     Serial.print("SSID: ");
-    Serial.print(AP_SSID);
-    Serial.print("\r\n");
+    Serial.println(AP_SSID);
     Serial.print("Password: ");
-    Serial.print(AP_Password);
-    Serial.print("\r\n");
+    Serial.println(AP_Password);
     Serial.print("IP: ");
-    Serial.print(AP_IP_Text);
-    Serial.print("\r\n");
+    Serial.println(AP_IP_Text);
     #endif
-    
+
     //
     // Set up WiFi
     //
@@ -135,7 +129,7 @@ void setup()
                 // payload should be null-terminated-string
                 if (payload[length-1] == '\0' || payload[length] == '\0')
                 {
-                    String str = (const char *)payload;
+                    const String str = (const char *)payload;
 
                     bool wasLogger = false;
                     if (str.length() > 1 && str[0] == '/' && str[1] != '/')
@@ -152,7 +146,7 @@ void setup()
                         {
                             wasLogger = true;
                             bool overwrite = commands.nextLower() == "overwrite";
-                            String &&fname = commands.next();
+                            const String &fname = commands.next();
                             ServerStartLogging(fname, overwrite);
                             boardcastLogging();
                         }
@@ -179,8 +173,8 @@ void setup()
                         }
                         else if (command == "/store")
                         {
-                            String &&filename = commands.next();
-                            String &&text = commands.next();
+                            const String &filename = commands.next();
+                            const String &text = commands.next();
                             WriteParameterToSPIFFS(filename, text);
                         }
                     }
@@ -190,7 +184,7 @@ void setup()
                         Serial.print(str);
 
                         #ifdef DEBUG
-                        Socket.broadcastTXT(str);
+                        Socket.broadcastTXT(str.c_str());
                         #endif
                         if (LogFile)
                         {
@@ -242,12 +236,13 @@ void loop()
             const String &command = commands.nextLower();
             if (command == "/store")
             {
-                String filename = commands.next();
-                String text = commands.next();
+                const String &filename = commands.next();
+                const String &text = commands.next();
                 #ifdef DEBUG
                 Serial.print("/store ");
                 Serial.print(filename);
-                Serial.print(text);
+                Serial.print(" ");
+                Serial.println(text);
                 #endif
                 WriteParameterToSPIFFS(filename, text);
             }
@@ -256,40 +251,48 @@ void loop()
     delay(1);
 }
 
-void ReadParameterFromSPIFFS(String filename, char buffer[], uint16_t maxbytes)
+void ReadParameterFromSPIFFS(const String &filename, char buffer[], uint16_t maxbytes)
 {
     //
-    // If available, obtain parameter from SPIFFS 
-    //   
-    //String filename = "/password.txt";
-    if (SPIFFS.exists(filename)) {
+    // If available, obtain parameter from SPIFFS
+    //
+
+    if (SPIFFS.exists(filename))
+    {
         #ifdef DEBUG
-        Serial.println(filename + " exists. Reading.\r\n");
+        Serial.println(filename + " exists. Reading.");
         #endif
         File hParameterFile = SPIFFS.open(filename, "r");
-        if (hParameterFile) {
-            while (hParameterFile.available()){
-              int l = hParameterFile.readBytesUntil('\n', buffer, maxbytes);
-              buffer[l] = 0;
+        if (hParameterFile)
+        {
+            while (hParameterFile.available())
+            {
+                size_t l = hParameterFile.readBytesUntil('\n', buffer, maxbytes);
+                buffer[l] = 0;
             }
             hParameterFile.close();
-        } else {
+        }
+        else
+        {
             #ifdef DEBUG
-            Serial.print("Error reading " + filename + " file\r\n");      
+            Serial.println("Error reading file " + filename);
             #endif
         }
-    } else {
+    }
+    else
+    {
         #ifdef DEBUG
-        Serial.println(filename + " doesn't exist. Please use deafult password.\r\n");
+        Serial.println(filename + " doesn't exists.");
         #endif
     }
 }
 
-void WriteParameterToSPIFFS(String filename, String buffer)
+void WriteParameterToSPIFFS(const String &filename, const String &buffer)
 {
     //
     // Write parameter to SPIFFS. Always overwrite.
     //
+
     File hParameterFile = SPIFFS.open(filename, "w");
     if (hParameterFile){
       hParameterFile.println(buffer);
@@ -297,23 +300,23 @@ void WriteParameterToSPIFFS(String filename, String buffer)
     }
 }
 
-void ServerStartLogging(String fname, bool overwrite)
+void ServerStartLogging(const String &fname, bool overwrite)
 {
     if (LogFile)
         return;
 
-    fname = LogDir + fname;
+    String name = (LogDir + fname);
 
-    if (fname.endsWith("/"))
-        fname += "log.txt";
-    else if (!fname.endsWith(".txt"))
-        fname += ".txt";
+    if (name.endsWith("/"))
+        name += "log.txt";
+    else if (!name.endsWith(".txt"))
+        name += ".txt";
 
     String message = "Opened file '";
-    message += fname + "'\n";
+    message += name + "'\n";
     Socket.broadcastTXT(message);
 
-    LogFile = SPIFFS.open(fname, ((overwrite || !SPIFFS.exists(fname)) ? "w" : "a"));
+    LogFile = SPIFFS.open(name, ((overwrite || !SPIFFS.exists(name)) ? "w" : "a"));
 }
 
 void ServerStopLogging()
@@ -358,7 +361,7 @@ bool ServerSendFile(ESP8266WebServer &server, const String &path)
     else if (lowerPath.endsWith(".pdf"))    dataType = F("application/x-pdf");
     else if (lowerPath.endsWith(".zip"))    dataType = F("application/x-zip");
 
-    String pathWithGz = path + ".gz";
+    String pathWithGz = path + ".gz"; // String + char* does not return a String!
 
     File file;
 
@@ -372,8 +375,21 @@ bool ServerSendFile(ESP8266WebServer &server, const String &path)
     }
     else
     {
+        #ifdef DEBUG
+        Serial.print("Failed to find file '");
+        Serial.print(pathWithGz);
+        Serial.print("' or '");
+        Serial.print(path);
+        Serial.println("'");
+        #endif
         return false;
     }
+
+    #ifdef DEBUG
+    Serial.print("Streaming file '");
+    Serial.print(path);
+    Serial.println("'");
+    #endif
 
     server.setContentLength(file.size());
     size_t sent = server.streamFile(file, dataType);
@@ -386,13 +402,12 @@ void ServerSendDirectory(ESP8266WebServer &server, const String &path)
     int lastIndex = path.lastIndexOf("/") + 1;
     if (lastIndex <= 0)
         lastIndex = 1;
-    String &&substr = path.substring(0, lastIndex);
+    const String &substr = path.substring(0, lastIndex);
 
     #ifndef DEBUG
     if (substr != LogDir)
     {
-        String error = "Failed to read file. '";
-        error += path + "'\n\n" + substr;
+        String error = "Failed to read file '" + path + "'\n\n" + substr;
         server.send(404, "text/plain", error);
     }
     else
@@ -400,8 +415,10 @@ void ServerSendDirectory(ESP8266WebServer &server, const String &path)
     {
         Dir dir = SPIFFS.openDir(substr);
 
-        String doc = R"(<html><head><meta charset="utf-8"></head><body><h1 style="margin:0 0 0 0;">)"
-            +substr+R"(</h1><br/><a href="/"><h2 style="margin:0 0 0 0;">Home</h2></a><br/>)";
+        String doc =
+            R"(<html><head><meta charset="utf-8"></head><body>)"
+            R"(<a href="/"><h1 style="margin:0 0 0 0;">Home</h1></a><br/>)"
+            R"(<h2 style="margin:0 0 0 0;">)" + substr + R"(</h2><br/>)";
         while (dir.next())
         {
             String &&fname = dir.fileName();

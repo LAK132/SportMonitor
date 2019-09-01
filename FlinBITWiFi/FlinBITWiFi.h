@@ -41,7 +41,7 @@ extern ESP8266WebServer Server;
 void ServerHandleRequest();
 void ServerSendFile(const String &path);
 void ServerSendDirectory(const String &path);
-void ServerStartLogging(String fname, const bool overwrite);
+void ServerStartLogging(const String &fname, const bool overwrite);
 void ServerStopLoggin();
 
 //
