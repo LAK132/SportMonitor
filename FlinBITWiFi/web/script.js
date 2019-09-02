@@ -234,7 +234,7 @@ var MessageParser = function(message)
             if (PlotterIndex < 0)
             {
                 PlotterIndex = 0;
-                var axis = 1;
+                var axis = 0; // the last axis is intentionally ignored
                 for (var i = 0; i < message.length; ++i) if (message[i] == ',') ++axis;
                 for (var i = 0; i < axis; ++i) PlotterAxis += ""+i+",";
                 PlotterAxis += ""+axis+"\n";
