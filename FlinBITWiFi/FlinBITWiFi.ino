@@ -1,5 +1,19 @@
 #include "FlinBITWiFi.h"
 
+#include <SparkFun_ADXL345.h>
+
+// Accel
+
+ADXL345 adxl = ADXL345(2);
+
+#define offsetX   -123       // OFFSET values
+#define offsetY   -16
+#define offsetZ   -10
+
+#define gainX     133        // GAIN factors
+#define gainY     261
+#define gainZ     248
+
 // Serial
 
 String SerialInputString = "";
@@ -52,6 +66,14 @@ void setup()
     SerialInputString.reserve(200);
 
     //
+    // Set up ADXL
+    //
+
+    adxl.powerOn();
+    adxl.setRangeSetting(16);
+    adxl.setSpiBit(false);
+
+    //
     // Set up SPIFFS
     //
     SPIFFS.begin();
@@ -62,7 +84,7 @@ void setup()
 
     uint8_t mac[6];
     WiFi.macAddress(mac);
-    snprintf(AP_SSID, sizeof(AP_SSID), "FlinBit_%02X%02X%02X", mac[3], mac[4], mac[5]);
+    snprintf(AP_SSID, sizeof(AP_SSID), "SportMonitor_%02X%02X%02X", mac[3], mac[4], mac[5]);
     ReadParameterFromSPIFFS("/SSID.txt", AP_SSID, sizeof(AP_SSID));
     Serial.print("WiFi SSID: ");
     Serial.println(AP_SSID);
@@ -188,16 +210,16 @@ void setup()
                         Serial.print(str);
 
                         #ifdef DEBUG
-                        Socket.broadcastTXT(str.c_str());
+                        Socket.broadcastTXT("/echo " + str);
                         #endif
                         if (LogFile)
                         {
                             size_t sz = str.length();
                             if (LogFile.write((const uint8_t *)str.c_str(), sz) != sz)
-                                Socket.broadcastTXT("> Failed to save\n");
+                                Socket.broadcastTXT("/echo > Failed to save\n");
                             #ifdef DEBUG
                             else
-                                Socket.broadcastTXT("> Saved\n");
+                                Socket.broadcastTXT("/echo > Saved\n");
                             #endif
                         }
                     }
@@ -215,6 +237,24 @@ void setup()
     });
 }
 
+void LogString(const String &str)
+{
+    if (LogFile)
+    {
+        size_t sz = str.length();
+        if (LogFile.write((const uint8_t *)str.c_str(), sz) != sz)
+            Socket.broadcastTXT("/echo > Failed to save\n");
+        #ifdef DEBUG
+        else
+            Socket.broadcastTXT("/echo > Saved");
+        #endif
+    }
+}
+
+unsigned long lastMillis = 0;
+unsigned long deltaMillis = 0;
+unsigned long sampleCount = 0;
+
 void loop()
 {
     DNS.processNextRequest();
@@ -222,17 +262,8 @@ void loop()
     Server.handleClient();
     if (SerialEvent())
     {
-        Socket.broadcastTXT(SerialInputString);
-        if (LogFile)
-        {
-            size_t sz = SerialInputString.length();
-            if (LogFile.write((const uint8_t *)SerialInputString.c_str(), sz) != sz)
-                Socket.broadcastTXT("> Failed to save\n");
-            #ifdef DEBUG
-            else
-                Socket.broadcastTXT("> Saved");
-            #endif
-        }
+        Socket.broadcastTXT("/echo " + SerialInputString);
+        LogString(SerialInputString);
 
         if (SerialInputString.length() > 1 && SerialInputString[0] == '/' && SerialInputString[1] != '/')
         {
@@ -252,6 +283,49 @@ void loop()
             }
         }
     }
+
+    unsigned long current = millis();
+
+    if (lastMillis > current)
+    {
+        // millis wrapped around
+        deltaMillis += (((unsigned long)-1) - lastMillis) + current;
+    }
+    else
+    {
+        deltaMillis += current - lastMillis;
+    }
+
+    lastMillis = current;
+    ++sampleCount;
+
+    // Do min/max samples here
+
+    if (deltaMillis > 1000)
+    {
+        int x, y, z;
+        adxl.readAccel(&x, &y, &z);
+
+        // Do real-g calculations here
+
+        double accX = x; // (x - offsetX) / gainX;         // Calculating New Values for X, Y and Z
+        double accY = y; // (y - offsetY) / gainY;
+        double accZ = z; // (z - offsetZ) / gainZ;
+
+        // Convert our values to a string
+        char str[100];
+        snprintf(str, sizeof(str), "%f, %f, %f, %lu\n", accX, accY, accZ, sampleCount);
+
+        // Print and save our string
+        Socket.broadcastTXT(str);
+        Serial.print(str);
+        LogString(str);
+
+        // Reset our counter variables
+        deltaMillis = 0;
+        sampleCount = 0;
+    }
+
     delay(1);
 }
 
@@ -316,7 +390,7 @@ void ServerStartLogging(const String &fname, const bool overwrite)
     else if (!name.endsWith(".txt"))
         name += ".txt";
 
-    String message = "Opened file '";
+    String message = "/echo Opened file '";
     message += name + "'\n";
     Socket.broadcastTXT(message);
 

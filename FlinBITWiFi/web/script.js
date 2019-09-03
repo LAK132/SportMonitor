@@ -229,14 +229,19 @@ var MessageParser = function(message)
     else
     {
         // not a command
+
+        // the last axis is intentionally ignored
+        var lastComma = message.lastIndexOf(",");
+        if (lastComma > 0)
+            message = message.substring(0, lastComma) + "\n";
         if (document.getElementById('serialPlotterEnabled').checked)
         {
             if (PlotterIndex < 0)
             {
                 PlotterIndex = 0;
-                var axis = 0; // the last axis is intentionally ignored
+                var axis = 1;
                 for (var i = 0; i < message.length; ++i) if (message[i] == ',') ++axis;
-                for (var i = 0; i < axis; ++i) PlotterAxis += ""+i+",";
+                for (var i = 0; i < axis; ++i) PlotterAxis += "" + i + ",";
                 PlotterAxis += ""+axis+"\n";
                 PlotterData = PlotterAxis;
             }
@@ -255,7 +260,7 @@ var MessageParser = function(message)
                     }
                 }
             }
-            PlotterData += ""+PlotterIndex+","+message;
+            PlotterData += "" + PlotterIndex + "," + message;
             PlotterIndex++;
             PlotterRefresh();
         }
