@@ -304,7 +304,7 @@ void WriteParameterToSPIFFS(const String &filename, const String &buffer)
     }
 }
 
-void ServerStartLogging(const String &fname, bool overwrite)
+void ServerStartLogging(const String &fname, const bool overwrite)
 {
     if (LogFile)
         return;
